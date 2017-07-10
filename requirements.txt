@@ -1,2 +1,4 @@
 
 # Additional requirements go here
+django-jenkins==0.110.0
+djangorestframework==3.6.3
