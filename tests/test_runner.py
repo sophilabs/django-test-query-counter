@@ -11,7 +11,7 @@ from django_api_query_count.query_count import (APIQueryCountTestCase,
                                                 APIQueryCountTransactionTestCase,
                                                 QueryCountCITestSuiteRunner,
                                                 TestResultQueryContainer,
-                                                skip_query_count)
+                                                exclude_query_count)
 
 
 class TestQueryCountCITestSuiteRunner(TestCase):
@@ -64,7 +64,7 @@ class TestQueryCountCITestSuiteRunner(TestCase):
 
     def test_skipped_test(self):
         class Test(APIQueryCountTransactionTestCase):
-            @skip_query_count()
+            @exclude_query_count()
             def test_foo(self):
                 pass
 

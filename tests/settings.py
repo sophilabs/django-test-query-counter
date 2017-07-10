@@ -16,6 +16,8 @@ DATABASES = {
     }
 }
 
+DEBUG = True
+
 ROOT_URLCONF = 'tests.urls'
 
 INSTALLED_APPS = [
@@ -30,6 +32,10 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):
-    MIDDLEWARE = ()
+    MIDDLEWARE = (
+        'django_api_query_count.query_count.Middleware',
+    )
 else:
-    MIDDLEWARE_CLASSES = ()
+    MIDDLEWARE_CLASSES = (
+        'django_api_query_count.query_count.Middleware',
+    )

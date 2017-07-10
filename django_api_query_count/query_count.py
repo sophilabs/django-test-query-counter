@@ -8,15 +8,36 @@ from django_jenkins.runner import CITestSuiteRunner
 from rest_framework.test import APIClient, APITestCase, APITransactionTestCase
 
 
-def skip_query_count():
+class _QueryCountExclude(object):
+    def __init__(self, path, method, count):
+        self.path = path
+        self.method = method
+        self.count = count
+
+
+def exclude_query_count(path=None, method=None, count=None):
     """
     Unconditionally skip a test query count.
     """
     def decorator(test_item):
-        test_item.__querycount_skip__ = True
+        excludes = getattr(test_item, '__querycount_exclude__', [])
+        excludes.append(_QueryCountExclude(path, method, count))
+        test_item.__querycount_exclude__ = excludes
         return test_item
 
     return decorator
+
+
+class Middleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def process_call(self, request):
+        response = self.get_response(request)
+        return response
+
+    def __call__(self, request):
+        return self.process_call(request)
 
 
 class TestResultQueryContainer(object):
@@ -173,8 +194,8 @@ class QueryCountAPIClient(APIClient):
 class _QueryCountTestCaseMixin(object):
     def count_queries_test_method(self, run_method, *args, **kwargs):
         test_method = getattr(self, self._testMethodName)
-        if (getattr(self.__class__, "__querycount_skip__", False) or
-                getattr(test_method, "__querycount_skip__", False)):
+        if (getattr(self.__class__, "__querycount_exclude__", False) or
+                getattr(test_method, "__querycount_exclude__", False)):
             # Skipped test: don't store queries
             return run_method(*args, **kwargs)
 
