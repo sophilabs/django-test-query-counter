@@ -4,7 +4,7 @@ from io import StringIO
 
 from django.test import TestCase
 
-from django_api_query_count.query_count import QueryCountEvaluator
+from request_query_count.query_count import QueryCountEvaluator
 
 
 class TestQueryCountEvaluator(TestCase):

@@ -3,7 +3,7 @@ from unittest import mock
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from django_api_query_count.query_count import QueryCountAPIClient
+from request_query_count.query_count import QueryCountAPIClient
 
 
 class TestAPIClient(TestCase):

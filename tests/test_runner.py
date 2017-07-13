@@ -7,11 +7,11 @@ from unittest import TestLoader, TextTestRunner
 
 from django.test import TestCase
 
-from django_api_query_count.query_count import (APIQueryCountTestCase,
-                                                APIQueryCountTransactionTestCase,
-                                                QueryCountCITestSuiteRunner,
-                                                TestResultQueryContainer,
-                                                exclude_query_count)
+from request_query_count.query_count import (APIQueryCountTestCase,
+                                             APIQueryCountTransactionTestCase,
+                                             QueryCountCITestSuiteRunner,
+                                             TestResultQueryContainer,
+                                             exclude_query_count)
 
 
 class TestQueryCountCITestSuiteRunner(TestCase):

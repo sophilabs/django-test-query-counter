@@ -20,22 +20,23 @@ DEBUG = True
 
 ROOT_URLCONF = 'tests.urls'
 
+QUERY_COUNT_DETAIL = 'reports/query_count_detail.json'
+QUERY_COUNT_SUMMARY = 'reports/query_count.json'
+
 INSTALLED_APPS = [
     'django_jenkins',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sites',
     'django',
-    'django_api_query_count',
+    'request_query_count',
 ]
 
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):
     MIDDLEWARE = (
-        'django_api_query_count.query_count.Middleware',
     )
 else:
     MIDDLEWARE_CLASSES = (
-        'django_api_query_count.query_count.Middleware',
     )

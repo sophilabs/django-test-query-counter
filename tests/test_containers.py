@@ -1,7 +1,7 @@
 from django.test import TestCase
 
-from django_api_query_count.query_count import (TestCaseQueryContainer,
-                                                TestResultQueryContainer)
+from request_query_count.query_count import (TestCaseQueryContainer,
+                                             TestResultQueryContainer)
 
 
 class QueryCountContainersTestCase(TestCase):

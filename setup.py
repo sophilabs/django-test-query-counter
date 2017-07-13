@@ -11,7 +11,7 @@ except ImportError:
 
 
 def get_version(*file_paths):
-    """Retrieves the version from django_api_query_count/__init__.py"""
+    """Retrieves the version from request_query_count/__init__.py"""
     filename = os.path.join(os.path.dirname(__file__), *file_paths)
     version_file = open(filename).read()
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
@@ -21,22 +21,22 @@ def get_version(*file_paths):
     raise RuntimeError('Unable to find version string.')
 
 
-version = get_version("django_api_query_count", "__init__.py")
+version = get_version("request_query_count", "__init__.py")
 
 
 if sys.argv[-1] == 'publish':
     try:
         import wheel
-        print("Wheel version: ", wheel.__version__)
+        print("Wheel version: ", wheel.__version__) # noqa
     except ImportError:
-        print('Wheel library missing. Please run "pip install wheel"')
+        print('Wheel library missing. Please run "pip install wheel"') # noqa
         sys.exit()
     os.system('python setup.py sdist upload')
     os.system('python setup.py bdist_wheel upload')
     sys.exit()
 
 if sys.argv[-1] == 'tag':
-    print("Tagging the version on git:")
+    print("Tagging the version on git:") # noqa
     os.system("git tag -a %s -m 'version %s'" % (version, version))
     os.system("git push --tags")
     sys.exit()
@@ -51,9 +51,9 @@ setup(
     long_description=readme + '\n\n' + history,
     author='Ignacio Avas',
     author_email='iavas@sophilabs.com',
-    url='https://github.com/igui/django-api-query-count',
+    url='https://github.com/igui/django-request-query-count',
     packages=[
-        'django_api_query_count',
+        'request_query_count',
     ],
     include_package_data=True,
     install_requires=[],
