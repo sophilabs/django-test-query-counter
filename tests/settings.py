@@ -1,6 +1,9 @@
 # -*- coding: utf-8
 from __future__ import absolute_import, unicode_literals
 
+import os.path
+from tempfile import mkdtemp
+
 import django
 
 DEBUG = True
@@ -14,6 +17,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',
     }
+}
+
+tempdir = mkdtemp('request_query_count_tests')
+
+REQUEST_QUERY_COUNT = {
+    'ENABLE': True,
+    'DETAIL_PATH': os.path.join(tempdir, 'query_count_detail.json'),
+    'SUMMARY_PATH': os.path.join(tempdir, 'query_count.json')
 }
 
 ROOT_URLCONF = 'tests.urls'
