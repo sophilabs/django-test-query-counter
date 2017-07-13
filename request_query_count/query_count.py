@@ -1,43 +1,46 @@
 import json
-import os
+import re
+import sys
 from sys import maxsize, stderr
 
-from django.db import DEFAULT_DB_ALIAS, connections
-from django.test.utils import CaptureQueriesContext
-from django_jenkins.runner import CITestSuiteRunner
-from rest_framework.test import APIClient, APITestCase, APITransactionTestCase
+ANY = '<any>'
 
 
-class _QueryCountExclude(object):
+class QueryCountExclusion(object):
     def __init__(self, path, method, count):
-        self.path = path
-        self.method = method
+        if path != ANY:
+            self.path = re.compile(path, re.IGNORECASE)
+        else:
+            self.path = re.compile('')
+
+        if method != ANY:
+            self.method = re.compile(method, re.IGNORECASE)
+        else:
+            self.method = re.compile('')
+
         self.count = count
 
+    def is_excluded(self, method, path, queries):
+        return self.method.search(method) and self.path.search(path) \
+            and len(queries) <= self.count
 
-def exclude_query_count(path=None, method=None, count=None):
+
+def exclude_query_count(path=ANY, method=ANY, count=sys.maxsize):
     """
-    Unconditionally skip a test query count.
+    Conditionally exclude a query count path, by path, method and count
+
+    :param path: the or regex of the excluded path(s).
+    :param method: the regex of the method(s) to exclude.
+    :param count: minimum number of queries tolerated.
+        Requests with less or same amount as "count" will be excluded.
     """
     def decorator(test_item):
-        excludes = getattr(test_item, '__querycount_exclude__', [])
-        excludes.append(_QueryCountExclude(path, method, count))
-        test_item.__querycount_exclude__ = excludes
+        exclude_list = getattr(test_item, '__querycount_exclude__', [])
+        exclude_list.append(QueryCountExclusion(path, method, count))
+        test_item.__querycount_exclude__ = exclude_list
         return test_item
 
     return decorator
-
-
-class Middleware(object):
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def process_call(self, request):
-        response = self.get_response(request)
-        return response
-
-    def __call__(self, request):
-        return self.process_call(request)
 
 
 class TestResultQueryContainer(object):
@@ -79,9 +82,9 @@ class TestResultQueryContainer(object):
 
 class TestCaseQueryContainer(object):
     """Stores queries by API method for a particular test case"""
-    def __init__(self):
-        self.queries_by_api_method = dict()
-        self.total = 0
+    def __init__(self, queries_by_api_method=None):
+        self.queries_by_api_method = queries_by_api_method or dict()
+        self.total = len(self.queries_by_api_method)
 
     def add_by_key(self, api_method_key, queries):
         """
@@ -93,9 +96,9 @@ class TestCaseQueryContainer(object):
         self.queries_by_api_method[api_method_key] = queries + existing_queries
         self.total += len(queries)
 
-    def add(self, method, path, queries):
+    def add(self, request, queries):
         """Agregates the queries to the captured queries dict"""
-        key = (method, path)
+        key = (request.method, request.path)
         self.add_by_key(key, queries)
 
     def merge(self, test_case_container):
@@ -105,6 +108,20 @@ class TestCaseQueryContainer(object):
         """
         for key, queries in test_case_container.queries_by_api_method.items():
             self.add_by_key(key, queries)
+
+    @staticmethod
+    def excluded(method, path, queries, exclusion_list):
+        return any((
+            exclusion.is_excluded(method, path, queries)
+            for exclusion in exclusion_list
+        ))
+
+    def filter_by(self, exclusion_list):
+        return TestCaseQueryContainer({
+            (method, path): queries
+            for (method, path), queries in self.queries_by_api_method.items()
+            if not self.excluded(method, path, queries, exclusion_list)
+        })
 
     @classmethod
     def api_call_json(cls, api_call, queries, detail):
@@ -134,124 +151,6 @@ class TestCaseQueryContainer(object):
                 for api_call, queries in self.queries_by_api_method.items()
             ]
         }
-
-
-class QueryCountAPIClient(APIClient):
-    """
-    Makes the API Client to capture queries. Agregates queries for URL and Path
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.api_queries = TestCaseQueryContainer()
-        super().__init__(*args, **kwargs)
-
-    @property
-    def connection(self):
-        """
-        Default connection
-        """
-        return connections[DEFAULT_DB_ALIAS]
-
-    # Overloaded APIClient methods
-
-    def get(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().get(path, data, **extra)
-            self.api_queries.add('get', path, context.captured_queries)
-            return response
-
-    def post(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().post(path, data, **extra)
-            self.api_queries.add('post', path, context.captured_queries)
-            return response
-
-    def put(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().put(path, data, **extra)
-            self.api_queries.add('put', path, context.captured_queries)
-            return response
-
-    def patch(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().patch(path, data, **extra)
-            self.api_queries.add('patch', path, context.captured_queries)
-            return response
-
-    def delete(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().delete(path, data, **extra)
-            self.api_queries.add('delete', path, context.captured_queries)
-            return response
-
-    def options(self, path, data=None, **extra):
-        with CaptureQueriesContext(self.connection) as context:
-            response = super().options(path, data, **extra)
-            self.api_queries.add('options', path, context.captured_queries)
-            return response
-
-
-class _QueryCountTestCaseMixin(object):
-    def count_queries_test_method(self, run_method, *args, **kwargs):
-        test_method = getattr(self, self._testMethodName)
-        if (getattr(self.__class__, "__querycount_exclude__", False) or
-                getattr(test_method, "__querycount_exclude__", False)):
-            # Skipped test: don't store queries
-            return run_method(*args, **kwargs)
-
-        result = run_method(*args, **kwargs)
-
-        if result:
-            all_queries = getattr(result, 'queries',
-                                  TestResultQueryContainer())
-            all_queries.add(self.id(), self.client.api_queries)
-            setattr(result, 'queries', all_queries)
-
-        return result
-
-
-class APIQueryCountTransactionTestCase(APITransactionTestCase,
-                                       _QueryCountTestCaseMixin):
-    """
-    Derives APITransactionTestCase and counts Query Count per API, per test
-    """
-    client_class = QueryCountAPIClient
-
-    def run(self, *args, **kwargs):
-        return self.count_queries_test_method(super().run, *args, **kwargs)
-
-
-class APIQueryCountTestCase(APITestCase, _QueryCountTestCaseMixin):
-    """
-    Derives APITestCase and counts Query Count per API, per test
-    """
-    client_class = QueryCountAPIClient
-
-    def run(self, *args, **kwargs):
-        return self.count_queries_test_method(super().run, *args, **kwargs)
-
-
-class QueryCountCITestSuiteRunner(CITestSuiteRunner):
-    SUMMARY_FILE = 'query_count.json'
-    DETAIL_FILE = 'query_count_detail.json'
-
-    def run_suite(self, *args, **kwargs):
-        """
-        Same as run_suite but, dumps the JSON in the output_dir
-        """
-        test_result = super().run_suite(*args, **kwargs)
-
-        filename = os.path.join(self.output_dir, self.SUMMARY_FILE)
-        with open(filename, 'w') as json_file:
-            json.dump(test_result.queries.get_json(detail=False), json_file,
-                      ensure_ascii=False, indent=4, sort_keys=True)
-
-        filename_detailed = os.path.join(self.output_dir, self.DETAIL_FILE)
-        with open(filename_detailed, 'w') as json_file:
-            json.dump(test_result.queries.get_json(detail=True), json_file,
-                      ensure_ascii=False, indent=4, sort_keys=True)
-
-        return test_result
 
 
 class Violation(object):

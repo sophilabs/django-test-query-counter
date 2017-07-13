@@ -1,8 +1,10 @@
 from io import StringIO
-from unittest import TestSuite, TextTestRunner
+from unittest import TestSuite, TextTestRunner, mock
+from unittest.mock import MagicMock
 
-from django.db import connection
 from django.test import TestCase
+
+from request_query_count.middleware import Middleware
 
 
 class TestMiddleWare(TestCase):
@@ -16,21 +18,19 @@ class TestMiddleWare(TestCase):
         self.test_runner = StringIOTextRunner()
 
     def test_middleware_called(self):
-        response = self.client.get('/url-1')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(hasattr(connection, 'queries'))
+        with mock.patch('request_query_count.middleware.Middleware',
+                        new=MagicMock(wraps=Middleware)) as mocked:
+            self.client.get('/url-1')
+            self.assertGreater(len(mocked.call_args_list), 0)
 
     def test_api_test_case_injected(self):
         class Test(TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
-            def test_bar(self):
-                self.client.get('/url-2')
-
         suite = TestSuite()
         suite.addTest(Test('test_foo'))
-        suite.addTest(Test('test_bar'))
-        self.test_runner.run(suite)
 
-        self.assertEqual
+        result = self.test_runner.run(suite)
+
+        self.assertEqual(result.queries.total, 1)

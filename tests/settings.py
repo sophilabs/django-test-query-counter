@@ -16,12 +16,7 @@ DATABASES = {
     }
 }
 
-DEBUG = True
-
 ROOT_URLCONF = 'tests.urls'
-
-QUERY_COUNT_DETAIL = 'reports/query_count_detail.json'
-QUERY_COUNT_SUMMARY = 'reports/query_count.json'
 
 INSTALLED_APPS = [
     'django_jenkins',
@@ -36,7 +31,9 @@ SITE_ID = 1
 
 if django.VERSION >= (1, 10):
     MIDDLEWARE = (
+        'request_query_count.middleware.Middleware',
     )
 else:
     MIDDLEWARE_CLASSES = (
+        'request_query_count.middleware.Middleware',
     )
