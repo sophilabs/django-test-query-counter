@@ -83,6 +83,7 @@ class TestResultQueryContainer(object):
 class TestCaseQueryContainer(object):
     """Stores queries by API method for a particular test case"""
     def __init__(self, queries_by_api_method=None):
+        self.recorded_requests = set()
         self.queries_by_api_method = queries_by_api_method or dict()
         self.total = len(self.queries_by_api_method)
 
@@ -98,6 +99,10 @@ class TestCaseQueryContainer(object):
 
     def add(self, request, queries):
         """Agregates the queries to the captured queries dict"""
+        if request in self.recorded_requests:
+            return
+
+        self.recorded_requests.add(request)
         key = (request.method, request.path)
         self.add_by_key(key, queries)
 
