@@ -85,7 +85,3 @@ class TestMiddleWare(TestCase):
         mock_get_response = object()
         with self.assertRaises(MiddlewareNotUsed):
             Middleware(mock_get_response)
-
-        with override_settings(TEST_QUERY_COUNTER={'ENABLE': True}):
-            with self.assertRaises(MiddlewareNotUsed):
-                Middleware()
