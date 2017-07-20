@@ -10,7 +10,6 @@ from django.conf import settings
 from django.test import TransactionTestCase
 from django.test.utils import get_runner
 from django.utils.module_loading import import_string
-
 from test_query_counter.query_count import (TestCaseQueryContainer,
                                             TestResultQueryContainer)
 
@@ -98,7 +97,7 @@ class RequestQueryCountConfig(AppConfig):
     def wrap_tear_down(cls, tear_down):
         def wrapped(self, *args, **kwargs):
             if not hasattr(cls, 'test_result_container') or not cls.enabled():
-                return tear_down(self, *args, *kwargs)
+                return tear_down(self, *args, **kwargs)
 
             container = cls.get_testcase_container()
 
@@ -113,7 +112,7 @@ class RequestQueryCountConfig(AppConfig):
             current_queries = container.filter_by(exclusions)
             all_queries.add(self.id(), current_queries)
 
-            return tear_down(self, *args, *kwargs)
+            return tear_down(self, *args, **kwargs)
 
         return wrapped
 
