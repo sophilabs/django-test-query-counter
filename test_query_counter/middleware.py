@@ -1,7 +1,7 @@
 from django.db import DEFAULT_DB_ALIAS, connections
 from django.test.utils import CaptureQueriesContext
 
-from request_query_count.apps import RequestQueryCountConfig
+from test_query_counter.apps import RequestQueryCountConfig
 
 
 class Middleware(object):

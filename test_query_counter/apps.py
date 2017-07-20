@@ -9,8 +9,8 @@ from django.conf import settings
 from django.test import TransactionTestCase
 from django.test.utils import get_runner
 
-from request_query_count.query_count import (TestCaseQueryContainer,
-                                             TestResultQueryContainer)
+from test_query_counter.query_count import (TestCaseQueryContainer,
+                                            TestResultQueryContainer)
 
 local = threading.local()
 
@@ -19,10 +19,10 @@ class RequestQueryCountConfig(AppConfig):
     LOCAL_TESTCASE_CONTAINER_NAME = 'querycount_test_case_container'
     LOCAL_RESULT_CONTAINER_NAME = 'querycount_result_container'
 
-    name = 'request_query_count'
+    name = 'test_query_counter'
     verbose_name = 'Request Query Count'
 
-    setting_name = 'REQUEST_QUERY_COUNT'
+    setting_name = 'TEST_QUERY_COUNTER'
 
     default_settings = {
         'ENABLE': True,
@@ -59,7 +59,7 @@ class RequestQueryCountConfig(AppConfig):
         setattr(
             settings,
             setting_name,
-            setting + ('request_query_count.middleware.Middleware',)
+            setting + ('test_query_counter.middleware.Middleware',)
         )
 
     @classmethod

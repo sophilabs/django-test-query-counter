@@ -19,9 +19,9 @@ DATABASES = {
     }
 }
 
-tempdir = mkdtemp('request_query_count_tests')
+tempdir = mkdtemp('test_query_counter_tests')
 
-REQUEST_QUERY_COUNT = {
+TEST_QUERY_COUNTER = {
     'ENABLE': True,
     'DETAIL_PATH': os.path.join(tempdir, 'query_count_detail.json'),
     'SUMMARY_PATH': os.path.join(tempdir, 'query_count.json')
@@ -35,16 +35,16 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sites',
     'django',
-    'request_query_count',
+    'test_query_counter',
 ]
 
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):
     MIDDLEWARE = (
-        'request_query_count.middleware.Middleware',
+        'test_query_counter.middleware.Middleware',
     )
 else:
     MIDDLEWARE_CLASSES = (
-        'request_query_count.middleware.Middleware',
+        'test_query_counter.middleware.Middleware',
     )

@@ -1,7 +1,7 @@
 from django.core.management import BaseCommand, CommandError
 
-from request_query_count.apps import RequestQueryCountConfig
-from request_query_count.query_count import QueryCountEvaluator
+from test_query_counter.apps import RequestQueryCountConfig
+from test_query_counter.query_count import QueryCountEvaluator
 
 
 class Command(BaseCommand):

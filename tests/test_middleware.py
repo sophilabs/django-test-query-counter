@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from django.test import TestCase
 
-from request_query_count.middleware import Middleware
+from test_query_counter.middleware import Middleware
 
 
 class TestMiddleWare(TestCase):
@@ -18,7 +18,7 @@ class TestMiddleWare(TestCase):
         self.test_runner = StringIOTextRunner()
 
     def test_middleware_called(self):
-        with mock.patch('request_query_count.middleware.Middleware',
+        with mock.patch('test_query_counter.middleware.Middleware',
                         new=MagicMock(wraps=Middleware)) as mocked:
             self.client.get('/url-1')
             self.assertGreater(len(mocked.call_args_list), 0)

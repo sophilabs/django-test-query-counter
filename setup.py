@@ -11,7 +11,7 @@ except ImportError:
 
 
 def get_version(*file_paths):
-    """Retrieves the version from request_query_count/__init__.py"""
+    """Retrieves the version from test_query_counter/__init__.py"""
     filename = os.path.join(os.path.dirname(__file__), *file_paths)
     version_file = open(filename).read()
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
@@ -21,7 +21,7 @@ def get_version(*file_paths):
     raise RuntimeError('Unable to find version string.')
 
 
-version = get_version("request_query_count", "__init__.py")
+version = get_version("test_query_counter", "__init__.py")
 
 
 if sys.argv[-1] == 'publish':
@@ -45,7 +45,7 @@ readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
-    name='django-api-query-count',
+    name='django-test-query-counter',
     version=version,
     description="""A Django Toolkit for controlling Query count when testing""",
     long_description=readme + '\n\n' + history,
@@ -53,13 +53,13 @@ setup(
     author_email='iavas@sophilabs.com',
     url='https://github.com/igui/django-request-query-count',
     packages=[
-        'request_query_count',
+        'test_query_counter',
     ],
     include_package_data=True,
     install_requires=[],
     license="MIT",
     zip_safe=False,
-    keywords='django-api-query-count',
+    keywords='django-test-query-counter',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',
