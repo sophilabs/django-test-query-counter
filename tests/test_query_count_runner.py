@@ -5,7 +5,6 @@ from unittest import TestLoader, TextTestRunner
 
 from django.test import TestCase
 from django.test.runner import DiscoverRunner
-
 from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.query_count import (TestResultQueryContainer,
                                             exclude_query_count)
@@ -208,6 +207,30 @@ class TestRunnerTest(TestCase):
 
         result = self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
+        )
+        self.assertEqual(
+            result.queries.queries_by_testcase[
+                self.get_id(Test, 'test_foo')].total,
+            1
+        )
+
+    def test_custom_setup_teardown(self):
+        class Test(TestCase):
+            def setUp(self):
+                pass
+
+            def tearDown(self):
+                pass
+
+            def test_foo(self):
+                self.client.get('/url-1')
+
+        result = self.test_runner.run_suite(
+            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
+        )
+        self.assertIn(
+            self.get_id(Test, 'test_foo'),
+            result.queries.queries_by_testcase
         )
         self.assertEqual(
             result.queries.queries_by_testcase[
