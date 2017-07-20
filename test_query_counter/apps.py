@@ -7,6 +7,7 @@ import threading
 
 from django.apps import AppConfig
 from django.conf import settings
+from django.core.checks import Error
 from django.test import TransactionTestCase
 from django.test.utils import get_runner
 from django.utils.module_loading import import_string
@@ -64,6 +65,7 @@ class RequestQueryCountConfig(AppConfig):
 
     @classmethod
     def add_middleware(cls):
+        middleware_class_name = 'test_query_counter.middleware.Middleware'
         middleware_setting = getattr(settings, 'MIDDLEWARE', None)
         setting_name = 'MIDDLEWARE'
         if middleware_setting is None:
@@ -72,15 +74,26 @@ class RequestQueryCountConfig(AppConfig):
 
         # add the middleware only if it was not added before
         if not any(map(cls.is_middleware_class, middleware_setting)):
-            setattr(
-                settings,
-                setting_name,
-                (
-                    middleware_setting + (
-                        'test_query_counter.middleware.Middleware',
-                    )
+            if isinstance(middleware_setting, list):
+                new_middleware_setting = (
+                    middleware_setting +
+                    [middleware_class_name]
                 )
-            )
+            elif isinstance(middleware_setting, tuple):
+                new_middleware_setting = (
+                    middleware_setting +
+                    (middleware_class_name,)
+                )
+            else:
+                err_msg = "{} is missing from {}.".format(
+                    middleware_class_name,
+                    setting_name
+                )
+                hint = "Add {} to {}.".format(middleware_class_name,
+                                              setting_name)
+                raise Error(err_msg, hint=hint)
+
+            setattr(settings, setting_name, new_middleware_setting)
 
     @classmethod
     def wrap_set_up(cls, set_up):
