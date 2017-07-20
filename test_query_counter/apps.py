@@ -1,4 +1,5 @@
 # -*- coding: utf-8
+import inspect
 import json
 import os
 import os.path
@@ -8,6 +9,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.test import TransactionTestCase
 from django.test.utils import get_runner
+from django.utils.module_loading import import_string
 
 from test_query_counter.query_count import (TestCaseQueryContainer,
                                             TestResultQueryContainer)
@@ -16,8 +18,8 @@ local = threading.local()
 
 
 class RequestQueryCountConfig(AppConfig):
+
     LOCAL_TESTCASE_CONTAINER_NAME = 'querycount_test_case_container'
-    LOCAL_RESULT_CONTAINER_NAME = 'querycount_result_container'
 
     name = 'test_query_counter'
     verbose_name = 'Request Query Count'
@@ -46,28 +48,48 @@ class RequestQueryCountConfig(AppConfig):
 
     @classmethod
     def get_testcase_container(cls):
-        return getattr(local, cls.LOCAL_TESTCASE_CONTAINER_NAME)
+        return getattr(local, cls.LOCAL_TESTCASE_CONTAINER_NAME, None)
+
+    @classmethod
+    def is_middleware_class(cls, middleware_path):
+        from test_query_counter.middleware import Middleware
+
+        try:
+            middleware_cls = import_string(middleware_path)
+        except ImportError:
+            return
+        return (
+            inspect.isclass(middleware_cls) and
+            issubclass(middleware_cls, Middleware)
+        )
 
     @classmethod
     def add_middleware(cls):
-        setting = getattr(settings, 'MIDDLEWARE', None)
+        middleware_setting = getattr(settings, 'MIDDLEWARE', None)
         setting_name = 'MIDDLEWARE'
-        if setting is None:
-            setting = settings.MIDDLEWARE_CLASSES
+        if middleware_setting is None:
+            middleware_setting = settings.MIDDLEWARE_CLASSES
             setting_name = 'MIDDLEWARE_CLASSES'
 
-        setattr(
-            settings,
-            setting_name,
-            setting + ('test_query_counter.middleware.Middleware',)
-        )
+        # add the middleware only if it was not added before
+        if not any(map(cls.is_middleware_class, middleware_setting)):
+            setattr(
+                settings,
+                setting_name,
+                (
+                    middleware_setting + (
+                        'test_query_counter.middleware.Middleware',
+                    )
+                )
+            )
 
     @classmethod
     def wrap_set_up(cls, set_up):
         def wrapped(self, *args, **kwargs):
             result = set_up(self, *args, **kwargs)
-            setattr(local, cls.LOCAL_TESTCASE_CONTAINER_NAME,
-                    TestCaseQueryContainer())
+            if cls.enabled():
+                setattr(local, cls.LOCAL_TESTCASE_CONTAINER_NAME,
+                        TestCaseQueryContainer())
             return result
 
         return wrapped
@@ -75,7 +97,7 @@ class RequestQueryCountConfig(AppConfig):
     @classmethod
     def wrap_tear_down(cls, tear_down):
         def wrapped(self, *args, **kwargs):
-            if not hasattr(cls, 'test_result_container'):
+            if not hasattr(cls, 'test_result_container') or not cls.enabled():
                 return tear_down(self, *args, *kwargs)
 
             container = cls.get_testcase_container()
@@ -113,6 +135,9 @@ class RequestQueryCountConfig(AppConfig):
     @classmethod
     def wrap_testrunner_run(cls, func):
         def wrapped(self, *args, **kwargs):
+            if not cls.enabled():
+                return
+
             cls.test_result_container = TestResultQueryContainer()
 
             result = func(self, *args, **kwargs)

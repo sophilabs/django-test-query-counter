@@ -5,6 +5,7 @@ from test_query_counter.query_count import QueryCountEvaluator
 
 
 class Command(BaseCommand):
+
     INCREASE_THRESHOLD = 10  # Threshold in percentage
 
     help = 'Checks if the API query_count has increased since the last run. ' \

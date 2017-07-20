@@ -171,6 +171,7 @@ class TestCaseQueryContainer(object):
 
 
 class Violation(object):
+
     def __init__(self, test_case_id, method, path, threshold, total):
         self.test_case_id = test_case_id
         self.method = method
@@ -180,6 +181,7 @@ class Violation(object):
 
 
 class QueryCountEvaluator(object):
+
     def __init__(self, threshold, current_file, last_file, stream=stderr):
         """
         Initializes the Evaluator, which writes t

@@ -1,13 +1,16 @@
+import os
 from io import StringIO
 from unittest import TestSuite, TextTestRunner, mock
 from unittest.mock import MagicMock
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
+from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.middleware import Middleware
 
 
 class TestMiddleWare(TestCase):
+
     def setUp(self):
         # Simple class that doesn't output to the standard output
         class StringIOTextRunner(TextTestRunner):
@@ -17,13 +20,23 @@ class TestMiddleWare(TestCase):
 
         self.test_runner = StringIOTextRunner()
 
+    def tearDown(self):
+        try:
+            os.remove(RequestQueryCountConfig.get_setting('DETAIL_PATH'))
+        except FileNotFoundError:
+            pass
+        try:
+            os.remove(RequestQueryCountConfig.get_setting('SUMMARY_PATH'))
+        except FileNotFoundError:
+            pass
+
     def test_middleware_called(self):
         with mock.patch('test_query_counter.middleware.Middleware',
                         new=MagicMock(wraps=Middleware)) as mocked:
             self.client.get('/url-1')
-            self.assertGreater(len(mocked.call_args_list), 0)
+            self.assertEqual(mocked.call_count, 1)
 
-    def test_api_test_case_injected(self):
+    def test_case_injected_one_test(self):
         class Test(TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
@@ -34,3 +47,35 @@ class TestMiddleWare(TestCase):
         result = self.test_runner.run(suite)
 
         self.assertEqual(result.queries.total, 1)
+
+    def test_case_injected_two_tests(self):
+        class Test(TestCase):
+            def test_foo(self):
+                self.client.get('/url-1')
+
+            def test_bar(self):
+                self.client.get('/url-2')
+
+        suite = TestSuite()
+        suite.addTest(Test('test_foo'))
+        suite.addTest(Test('test_bar'))
+
+        result = self.test_runner.run(suite)
+
+        self.assertEqual(result.queries.total, 2)
+
+    @override_settings(TEST_QUERY_COUNTER={'ENABLE': False})
+    def test_case_disable_setting(self):
+        class Test(TestCase):
+            def test_foo(self):
+                self.client.get('/url-1')
+
+            def test_bar(self):
+                self.client.get('/url-2')
+
+        suite = TestSuite()
+        suite.addTest(Test('test_foo'))
+        suite.addTest(Test('test_bar'))
+
+        result = self.test_runner.run(suite)
+        self.assertFalse(hasattr(result, 'queries'))

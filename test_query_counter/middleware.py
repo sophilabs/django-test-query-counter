@@ -5,11 +5,21 @@ from test_query_counter.apps import RequestQueryCountConfig
 
 
 class Middleware(object):
+    """
+    Intercepts queries in a request and put it in the query container provided
+    by the RequestQueryCountConfig, during the wrapped test setUp method.
+
+    The middleware is intended to be automatically added
+
+    If the query container is None, then the middleware is not executed.
+    """
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if not RequestQueryCountConfig.enabled():
+        container = RequestQueryCountConfig.get_testcase_container()
+        if container is None:
             # It is not necessary to capture queries
             return self.get_response(request)
 

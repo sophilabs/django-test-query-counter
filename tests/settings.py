@@ -41,10 +41,6 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):
-    MIDDLEWARE = (
-        'test_query_counter.middleware.Middleware',
-    )
+    MIDDLEWARE = ()
 else:
-    MIDDLEWARE_CLASSES = (
-        'test_query_counter.middleware.Middleware',
-    )
+    MIDDLEWARE_CLASSES = ()
