@@ -7,7 +7,6 @@ import threading
 
 from django.apps import AppConfig
 from django.conf import settings
-from django.core.checks import Error
 from django.test import TransactionTestCase
 from django.test.utils import get_runner
 from django.utils.module_loading import import_string
@@ -89,9 +88,7 @@ class RequestQueryCountConfig(AppConfig):
                     middleware_class_name,
                     setting_name
                 )
-                hint = "Add {} to {}.".format(middleware_class_name,
-                                              setting_name)
-                raise Error(err_msg, hint=hint)
+                raise TypeError(err_msg)
 
             setattr(settings, setting_name, new_middleware_setting)
 

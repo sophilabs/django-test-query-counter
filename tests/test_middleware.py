@@ -3,8 +3,8 @@ from io import StringIO
 from unittest import TestSuite, TextTestRunner, mock
 from unittest.mock import MagicMock
 
+from django.core.exceptions import MiddlewareNotUsed
 from django.test import TestCase, override_settings
-
 from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.middleware import Middleware
 
@@ -79,3 +79,13 @@ class TestMiddleWare(TestCase):
 
         result = self.test_runner.run(suite)
         self.assertFalse(hasattr(result, 'queries'))
+
+    @override_settings(TEST_QUERY_COUNTER={'ENABLE': False})
+    def test_disabled(self):
+        mock_get_response = object()
+        with self.assertRaises(MiddlewareNotUsed):
+            Middleware(mock_get_response)
+
+        with override_settings(TEST_QUERY_COUNTER={'ENABLE': True}):
+            with self.assertRaises(MiddlewareNotUsed):
+                Middleware()

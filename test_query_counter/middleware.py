@@ -1,6 +1,6 @@
+from django.core.exceptions import MiddlewareNotUsed
 from django.db import DEFAULT_DB_ALIAS, connections
 from django.test.utils import CaptureQueriesContext
-
 from test_query_counter.apps import RequestQueryCountConfig
 
 
@@ -14,7 +14,9 @@ class Middleware(object):
     If the query container is None, then the middleware is not executed.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response=None):
+        if get_response is None or not RequestQueryCountConfig.enabled():
+            raise MiddlewareNotUsed()
         self.get_response = get_response
 
     def __call__(self, request):
