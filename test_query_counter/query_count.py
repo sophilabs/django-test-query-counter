@@ -3,24 +3,27 @@ import re
 import sys
 from sys import maxsize, stderr
 
-ANY = '<any>'
+ANY = ''
 
 
 class QueryCountExclusion(object):
+    """Represents an test condition to exclude some of the query counts made
+      by the requests. Meant to be used in exclude_query_count"""
+
     def __init__(self, path, method, count):
-        if path != ANY:
-            self.path = re.compile(path, re.IGNORECASE)
-        else:
-            self.path = re.compile('')
-
-        if method != ANY:
-            self.method = re.compile(method, re.IGNORECASE)
-        else:
-            self.method = re.compile('')
-
+        self.path = re.compile(path, re.IGNORECASE)
+        self.method = re.compile(method, re.IGNORECASE)
         self.count = count
 
     def is_excluded(self, method, path, queries):
+        """
+        Compare method path <num queries> against the exclusion
+
+        :param method: method to compare against
+        :param path: path to compare
+        :param queries: number of queries made to that particular request
+        :return: True if this exclusion applies to the request
+        """
         return self.method.search(method) and self.path.search(path) \
             and len(queries) <= self.count
 
@@ -34,6 +37,7 @@ def exclude_query_count(path=ANY, method=ANY, count=sys.maxsize):
     :param count: minimum number of queries tolerated.
         Requests with less or same amount as "count" will be excluded.
     """
+
     def decorator(test_item):
         exclude_list = getattr(test_item, '__querycount_exclude__', [])
         exclude_list.append(QueryCountExclusion(path, method, count))
@@ -44,7 +48,8 @@ def exclude_query_count(path=ANY, method=ANY, count=sys.maxsize):
 
 
 class TestResultQueryContainer(object):
-    """Stores all the queries from a Test Run, contained in a TestResult"""
+    """Stores all the queries from a Test Run, aggregated by Test Case"""
+
     def __init__(self):
         self.queries_by_testcase = dict()
         self.total = 0
@@ -66,11 +71,18 @@ class TestResultQueryContainer(object):
 
     @classmethod
     def test_case_json(cls, test_case_id, query_container, detail):
+        """Returns a JSON compatible representation of the test case queries"""
         representation = query_container.get_json(detail)
         representation['id'] = test_case_id
         return representation
 
     def get_json(self, detail):
+        """
+        Returns a JSON compatible representation of the Test Result. Contains
+        all queries ran in the test case
+
+        :param detail: If True, will include query details
+        """
         return {
             'total': self.total,
             'test_cases': [
@@ -114,8 +126,8 @@ class TestCaseQueryContainer(object):
         for key, queries in test_case_container.queries_by_api_method.items():
             self.add_by_key(key, queries)
 
-    @staticmethod
-    def excluded(method, path, queries, exclusion_list):
+    @classmethod
+    def excluded(cls, method, path, queries, exclusion_list):
         return any((
             exclusion.is_excluded(method, path, queries)
             for exclusion in exclusion_list
