@@ -11,7 +11,7 @@ except ImportError:
 
 
 def get_version(*file_paths):
-    """Retrieves the version from django_api_query_count/__init__.py"""
+    """Retrieves the version from test_query_counter/__init__.py"""
     filename = os.path.join(os.path.dirname(__file__), *file_paths)
     version_file = open(filename).read()
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
@@ -21,22 +21,22 @@ def get_version(*file_paths):
     raise RuntimeError('Unable to find version string.')
 
 
-version = get_version("django_api_query_count", "__init__.py")
+version = get_version("test_query_counter", "__init__.py")
 
 
 if sys.argv[-1] == 'publish':
     try:
         import wheel
-        print("Wheel version: ", wheel.__version__)
+        print("Wheel version: ", wheel.__version__) # noqa
     except ImportError:
-        print('Wheel library missing. Please run "pip install wheel"')
+        print('Wheel library missing. Please run "pip install wheel"') # noqa
         sys.exit()
     os.system('python setup.py sdist upload')
     os.system('python setup.py bdist_wheel upload')
     sys.exit()
 
 if sys.argv[-1] == 'tag':
-    print("Tagging the version on git:")
+    print("Tagging the version on git:") # noqa
     os.system("git tag -a %s -m 'version %s'" % (version, version))
     os.system("git push --tags")
     sys.exit()
@@ -45,21 +45,21 @@ readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
-    name='django-api-query-count',
+    name='django-test-query-counter',
     version=version,
     description="""A Django Toolkit for controlling Query count when testing""",
     long_description=readme + '\n\n' + history,
     author='Ignacio Avas',
     author_email='iavas@sophilabs.com',
-    url='https://github.com/igui/django-api-query-count',
+    url='https://github.com/igui/django-request-query-count',
     packages=[
-        'django_api_query_count',
+        'test_query_counter',
     ],
     include_package_data=True,
     install_requires=[],
     license="MIT",
     zip_safe=False,
-    keywords='django-api-query-count',
+    keywords='django-test-query-counter',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',

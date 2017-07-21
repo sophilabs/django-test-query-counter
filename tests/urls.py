@@ -1,10 +1,12 @@
 # -*- coding: utf-8
-from __future__ import unicode_literals, absolute_import
+from __future__ import absolute_import, unicode_literals
 
-from django.conf.urls import url, include
+from django.conf.urls import url
 
-from django_api_query_count.urls import urlpatterns as django_api_query_count_urls
+from tests.views import view1, view2
 
 urlpatterns = [
-    url(r'^', include(django_api_query_count_urls, namespace='django_api_query_count')),
+    url(r'^url-1$', view1, name='view-1'),
+    url(r'^url-2$', view2, name='view-2'),
+    url(r'^url-3$', view2, name='view-3')
 ]
