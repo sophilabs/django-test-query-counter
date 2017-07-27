@@ -1,5 +1,6 @@
 import os
 from io import StringIO
+from os import path
 from unittest import TestSuite, TextTestRunner, mock
 from unittest.mock import MagicMock
 
@@ -85,3 +86,19 @@ class TestMiddleWare(TestCase):
         mock_get_response = object()
         with self.assertRaises(MiddlewareNotUsed):
             Middleware(mock_get_response)
+
+    def test_json_exists(self):
+        class Test(TestCase):
+            def test_foo(self):
+                self.client.get('/url-1')
+
+        suite = TestSuite()
+        suite.addTest(Test('test_foo'))
+
+        self.assertFalse(path.exists(
+            RequestQueryCountConfig.get_setting('DETAIL_PATH'))
+        )
+        self.test_runner.run(suite)
+        self.assertTrue(path.exists(
+            RequestQueryCountConfig.get_setting('DETAIL_PATH'))
+        )

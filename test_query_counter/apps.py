@@ -7,7 +7,7 @@ import threading
 
 from django.apps import AppConfig
 from django.conf import settings
-from django.test import TransactionTestCase
+from django.test import SimpleTestCase
 from django.test.utils import get_runner
 from django.utils.module_loading import import_string
 from test_query_counter.query_count import (TestCaseQueryContainer,
@@ -93,7 +93,7 @@ class RequestQueryCountConfig(AppConfig):
             setattr(settings, setting_name, new_middleware_setting)
 
     @classmethod
-    def wrap_set_up(cls, set_up):
+    def wrap_pre_set_up(cls, set_up):
         def wrapped(self, *args, **kwargs):
             result = set_up(self, *args, **kwargs)
             if cls.enabled():
@@ -104,7 +104,7 @@ class RequestQueryCountConfig(AppConfig):
         return wrapped
 
     @classmethod
-    def wrap_tear_down(cls, tear_down):
+    def wrap_post_tear_down(cls, tear_down):
         def wrapped(self, *args, **kwargs):
             if not hasattr(cls, 'test_result_container') or not cls.enabled():
                 return tear_down(self, *args, **kwargs)
@@ -128,9 +128,12 @@ class RequestQueryCountConfig(AppConfig):
 
     @classmethod
     def patch_test_case(cls):
-        TransactionTestCase.setUp = cls.wrap_set_up(TransactionTestCase.setUp)
-        TransactionTestCase.tearDown = cls.wrap_tear_down(
-            TransactionTestCase.tearDown)
+        SimpleTestCase._pre_setup = cls.wrap_pre_set_up(
+            SimpleTestCase._pre_setup
+        )
+        SimpleTestCase._post_teardown = cls.wrap_post_tear_down(
+            SimpleTestCase._post_teardown
+        )
 
     @classmethod
     def save_json(cls, setting_name, container, detail):
