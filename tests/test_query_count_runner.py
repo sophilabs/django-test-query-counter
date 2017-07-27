@@ -6,6 +6,7 @@ from unittest import TestLoader, TextTestRunner
 from django.test import TestCase
 from django.test.runner import DiscoverRunner
 from test_query_counter.apps import RequestQueryCountConfig
+from test_query_counter.manager import RequestQueryCountManager
 from test_query_counter.query_count import (TestResultQueryContainer,
                                             exclude_query_count)
 
@@ -40,14 +41,17 @@ class TestRunnerTest(TestCase):
             def test_bar(self):
                 pass
 
-        result = self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
+        self.test_runner.setup_test_environment()
+        self.test_runner.run_suite(TestLoader().loadTestsFromTestCase(
+            testCaseClass=Test)
         )
+        self.test_runner.teardown_test_environment()
 
         # check for empty tests
-        self.assertIsNotNone(result, 'queries')
-        self.assertIsInstance(result.queries, TestResultQueryContainer)
-        self.assertEqual(result.queries.total, 0)
+        self.assertIsNotNone(RequestQueryCountManager, 'queries')
+        self.assertIsInstance(RequestQueryCountManager.queries,
+                              TestResultQueryContainer)
+        self.assertEqual(RequestQueryCountManager.queries.total, 0)
 
         # check if files are generated
         self.assertTrue(path.exists(
@@ -74,18 +78,20 @@ class TestRunnerTest(TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_tests(
+            None,
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
 
         # Assert it ran one test
-        self.assertEqual(len(result.queries.queries_by_testcase), 1)
+        self.assertEqual(len(RequestQueryCountManager.queries.queries_by_testcase), 1)
 
         test_foo_id = self.get_id(Test, 'test_foo')
-        self.assertIn(test_foo_id, result.queries.queries_by_testcase)
+        self.assertIn(test_foo_id,
+                      RequestQueryCountManager.queries.queries_by_testcase)
 
         self.assertEqual(
-            result.queries.queries_by_testcase[test_foo_id].total, 1
+            RequestQueryCountManager.queries.queries_by_testcase[test_foo_id].total, 1
         )
 
     def test_excluded_test(self):
@@ -97,18 +103,18 @@ class TestRunnerTest(TestCase):
             def test_bar(self):
                 self.client.get('/url-1')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         # Assert test_foo has excluded queries
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
             0
         )
         # Assert test_bar has some queries
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_bar')].total,
             1
         )
@@ -122,17 +128,17 @@ class TestRunnerTest(TestCase):
             def test_bar(self):
                 self.client.get('path-1')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         # Assert test_foo has excluded queries
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
             0
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_bar')].total,
             0
         )
@@ -158,21 +164,21 @@ class TestRunnerTest(TestCase):
                 self.client.put('/url-3')
                 self.client.put('/url-3')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_exclude_path')].total,
             1
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_exclude_method')].total,
             1
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_exclude_count')].total,
             3
         )
@@ -187,11 +193,11 @@ class TestRunnerTest(TestCase):
                 self.client.post('/url-2')
                 self.client.put('/url-3')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
             0
         )
@@ -205,11 +211,11 @@ class TestRunnerTest(TestCase):
                 self.client.post('/url-2')
                 self.client.put('/url-3')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
             1
         )
@@ -225,15 +231,15 @@ class TestRunnerTest(TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
-        result = self.test_runner.run_suite(
+        self.test_runner.run_suite(
             TestLoader().loadTestsFromTestCase(testCaseClass=Test)
         )
         self.assertIn(
             self.get_id(Test, 'test_foo'),
-            result.queries.queries_by_testcase
+            RequestQueryCountManager.queries.queries_by_testcase
         )
         self.assertEqual(
-            result.queries.queries_by_testcase[
+            RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
             1
         )

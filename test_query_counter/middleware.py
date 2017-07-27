@@ -2,6 +2,7 @@ from django.core.exceptions import MiddlewareNotUsed
 from django.core.signals import request_started
 from django.db import DEFAULT_DB_ALIAS, connections, reset_queries
 from test_query_counter.apps import RequestQueryCountConfig
+from test_query_counter.manager import RequestQueryCountManager
 
 try:
     from django.utils.deprecation import MiddlewareMixin
@@ -30,7 +31,7 @@ class Middleware(MiddlewareMixin):
         self.connection = connections[DEFAULT_DB_ALIAS]
 
     def process_request(self, _):
-        if RequestQueryCountConfig.get_testcase_container():
+        if RequestQueryCountManager.get_testcase_container():
             # Took from django.test.utils.CaptureQueriesContext
             self.force_debug_cursor = self.connection.force_debug_cursor
             self.connection.force_debug_cursor = True
@@ -39,7 +40,7 @@ class Middleware(MiddlewareMixin):
             request_started.disconnect(reset_queries)
 
     def process_response(self, request, response):
-        if RequestQueryCountConfig.get_testcase_container():
+        if RequestQueryCountManager.get_testcase_container():
             # Took from django.test.utils.CaptureQueriesContext
             self.connection.force_debug_cursor = self.force_debug_cursor
             request_started.connect(reset_queries)
@@ -48,7 +49,7 @@ class Middleware(MiddlewareMixin):
                 self.initial_queries:final_queries
             ]
 
-            query_container = RequestQueryCountConfig.get_testcase_container()
+            query_container = RequestQueryCountManager.get_testcase_container()
             query_container.add(request, captured_queries)
 
         return response
