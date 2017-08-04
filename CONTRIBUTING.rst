@@ -13,7 +13,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/igui/django-test-query-counter/issues.
+Report bugs at https://github.com/sophilabs/django-test-query-counter/issues.
 
 If you are reporting a bug, please include:
 
@@ -44,7 +44,7 @@ Submit Feedback
 ~~~~~~~~~~~~~~~
 
 The best way to send feedback is to file an issue at https://github
-.com/igui/django-test-query-counter/issues.
+.com/sophilabs/django-test-query-counter/issues.
 
 If you are proposing a feature:
 
@@ -104,7 +104,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 2.6, 2.7, and 3.3, and for PyPy. Check
-   https://travis-ci.org/igui/django-test-query-counter/pull_requests
+   https://travis-ci.org/sophilabs/django-test-query-counter/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -112,4 +112,4 @@ Tips
 
 To run a subset of tests::
 
-    $ python -m unittest tests.test_test_query_counter
+    $ python runtests.py tests.test_test_query_counter

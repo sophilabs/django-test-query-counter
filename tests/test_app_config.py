@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.test import TestCase, override_settings
 from test_query_counter.apps import RequestQueryCountConfig
+from test_query_counter.manager import RequestQueryCountManager
 
 
 class TestAppConfig(TestCase):
@@ -17,8 +18,8 @@ class TestAppConfig(TestCase):
         self.assertTrue(RequestQueryCountConfig.enabled())
 
     def test_add_middleware_twice(self):
-        RequestQueryCountConfig.add_middleware()
-        RequestQueryCountConfig.add_middleware()
+        RequestQueryCountManager.add_middleware()
+        RequestQueryCountManager.add_middleware()
 
         middlewares = settings.MIDDLEWARE
         self.assertEqual(len(middlewares), 1)
@@ -28,16 +29,16 @@ class TestAppConfig(TestCase):
 
     def test_list_middlewares_types(self):
         with override_settings(MIDDLEWARE=[]):
-            RequestQueryCountConfig.add_middleware()
+            RequestQueryCountManager.add_middleware()
             self.assertEqual(settings.MIDDLEWARE, [
                              'test_query_counter.middleware.Middleware'
                              ])
         with override_settings(MIDDLEWARE=()):
-            RequestQueryCountConfig.add_middleware()
+            RequestQueryCountManager.add_middleware()
             self.assertEqual(
                 settings.MIDDLEWARE,
                 ('test_query_counter.middleware.Middleware',)
             )
         with override_settings(MIDDLEWARE='some_nasty_thing'):
             with self.assertRaises(Exception):
-                RequestQueryCountConfig.add_middleware()
+                RequestQueryCountManager.add_middleware()
