@@ -33,7 +33,7 @@ Add it to your `INSTALLED_APPS`:
 
     INSTALLED_APPS = (
         ...
-        'request-query-count',
+        'request_query_count',
         ...
     )
 
