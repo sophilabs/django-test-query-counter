@@ -46,8 +46,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django API Query Count'
-copyright = u'2017, Ignacio Avas'
+project = u'Django Test Query Count'
+copyright = u'2017, Sophilabs Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -192,7 +192,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'django-test-query-counter.tex', u'Django API Query Count '
+  ('index', 'django-test-query-counter.tex', u'Django Test Query Count '
                                            u'Documentation',
    u'Ignacio Avas', 'manual'),
 ]
@@ -223,7 +223,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-test-query-counter', u'Django API Query Count '
+    ('index', 'django-test-query-counter', u'Django Test Query Count '
                                          u'Documentation',
      [u'Ignacio Avas'], 1)
 ]
@@ -238,7 +238,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'django-test-query-counter', u'Django API Query Count '
+  ('index', 'django-test-query-counter', u'Django Test Query Count '
                                         u'Documentation',
    u'Ignacio Avas', 'django-test-query-counter', 'One line description of '
                                                'project.',

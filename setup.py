@@ -51,7 +51,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author='Ignacio Avas',
     author_email='iavas@sophilabs.com',
-    url='https://github.com/igui/django-request-query-count',
+    url='https://github.com/sophilabs/django-request-query-count',
     packages=[
         'test_query_counter',
     ],

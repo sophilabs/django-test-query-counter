@@ -5,11 +5,11 @@ Django Test Query Counter
 .. image:: https://badge.fury.io/py/django-test-query-counter.svg
     :target: https://badge.fury.io/py/django-test-query-counter
 
-.. image:: https://travis-ci.org/igui/django-test-query-counter.svg?branch=master
-    :target: https://travis-ci.org/igui/django-test-query-counter
+.. image:: https://travis-ci.org/sophilabs/django-test-query-counter.svg?branch=master
+    :target: https://travis-ci.org/sophilabs/django-test-query-counter
 
-.. image:: https://codecov.io/gh/igui/django-test-query-counter/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/igui/django-test-query-counter
+.. image:: https://codecov.io/gh/sophilabs/django-test-query-counter/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/sophilabs/django-test-query-counter
 
 
 .. image:: logo.png
