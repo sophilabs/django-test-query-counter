@@ -240,6 +240,10 @@ TODO
 * Make query count configurable
 * Include Jenkins support out of the box (using `django_jenkins`)
 
+Other features
+
+* Group same queries and report their number of repetitions
+
 Running Tests
 -------------
 
