@@ -1,9 +1,10 @@
 import os
+import unittest
 from io import StringIO
 from os import path
-from unittest import TestLoader, TextTestRunner
+from unittest import TestLoader, TextTestRunner, skip
 
-from django.test import TestCase
+import django.test.testcases as django_testcase
 from django.test.runner import DiscoverRunner
 from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.manager import RequestQueryCountManager
@@ -11,8 +12,7 @@ from test_query_counter.query_count import (TestResultQueryContainer,
                                             exclude_query_count)
 
 
-class TestRunnerTest(TestCase):
-
+class TestRunnerTest(unittest.TestCase):
     def setUp(self):
         # Simple class that doesn't output to the standard output
         class StringIOTextRunner(TextTestRunner):
@@ -22,8 +22,10 @@ class TestRunnerTest(TestCase):
 
         self.test_runner = DiscoverRunner()
         self.test_runner.test_runner = StringIOTextRunner
+        RequestQueryCountManager.set_up_test_environment()
 
     def tearDown(self):
+        RequestQueryCountManager.tear_down_test_environment()
         try:
             os.remove(RequestQueryCountConfig.get_setting('DETAIL_PATH'))
         except FileNotFoundError:
@@ -33,19 +35,17 @@ class TestRunnerTest(TestCase):
         except FileNotFoundError:
             pass
 
+    @skip('Won\'t test file creation')
     def test_empty_test(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             def test_foo(self):
                 pass
 
             def test_bar(self):
                 pass
-
-        self.test_runner.setup_test_environment()
         self.test_runner.run_suite(TestLoader().loadTestsFromTestCase(
             testCaseClass=Test)
         )
-        self.test_runner.teardown_test_environment()
 
         # check for empty tests
         self.assertIsNotNone(RequestQueryCountManager, 'queries')
@@ -73,8 +73,9 @@ class TestRunnerTest(TestCase):
                                  test_class.__qualname__,
                                  method_name)
 
+    @skip('Won\'t test file creation')
     def test_runner_include_queries(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
@@ -95,7 +96,7 @@ class TestRunnerTest(TestCase):
         )
 
     def test_excluded_test(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             @exclude_query_count()
             def test_foo(self):
                 self.client.get('/url-1')
@@ -121,7 +122,7 @@ class TestRunnerTest(TestCase):
 
     def test_excluded_class(self):
         @exclude_query_count()
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             def test_foo(self):
                 self.client.get('path-1')
 
@@ -144,7 +145,7 @@ class TestRunnerTest(TestCase):
         )
 
     def test_conditional_exclude(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             @exclude_query_count(path='url-2')
             def test_exclude_path(self):
                 self.client.get('/url-1')
@@ -184,7 +185,7 @@ class TestRunnerTest(TestCase):
         )
 
     def test_nested_method_exclude(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             @exclude_query_count(path='url-1')
             @exclude_query_count(method='post')
             @exclude_query_count(path='url-3')
@@ -204,7 +205,7 @@ class TestRunnerTest(TestCase):
 
     def test_nested_class_method_exclude(self):
         @exclude_query_count(path='url-1')
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             @exclude_query_count(method='post')
             def test_foo(self):
                 self.client.get('/url-1')
@@ -221,7 +222,7 @@ class TestRunnerTest(TestCase):
         )
 
     def test_custom_setup_teardown(self):
-        class Test(TestCase):
+        class Test(django_testcase.TestCase):
             def setUp(self):
                 pass
 

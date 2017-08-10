@@ -1,8 +1,7 @@
 import json
 import re
 from io import StringIO
-
-from django.test import TestCase
+from unittest import TestCase
 
 from test_query_counter.query_count import QueryCountEvaluator
 

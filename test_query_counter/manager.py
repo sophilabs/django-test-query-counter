@@ -4,6 +4,7 @@ import json
 import os
 import os.path
 import threading
+from shutil import copyfile
 
 from django.conf import settings
 from django.test import SimpleTestCase
@@ -113,21 +114,41 @@ class RequestQueryCountManager(object):
 
     @classmethod
     def save_json(cls, setting_name, container, detail):
-        summary_path = os.path.realpath(RequestQueryCountConfig.get_setting(
+        json_path = os.path.realpath(RequestQueryCountConfig.get_setting(
             setting_name))
-        os.makedirs(os.path.dirname(summary_path), exist_ok=True)
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
 
-        with open(summary_path, 'w') as json_file:
+        with open(json_path, 'w') as json_file:
             json.dump(container.get_json(detail=detail), json_file,
                       ensure_ascii=False, indent=4, sort_keys=True)
+
+    @classmethod
+    def backup_json(cls, setting_name):
+        json_path = os.path.realpath(RequestQueryCountConfig.get_setting(
+            setting_name))
+        if os.path.exists(json_path):
+            copyfile(json_path, json_path + '.bak')
+
+    @classmethod
+    def set_up_test_environment(cls):
+        if RequestQueryCountConfig.enabled():
+            cls.queries = TestResultQueryContainer()
+
+    @classmethod
+    def tear_down_test_environment(cls):
+        if not RequestQueryCountConfig.enabled():
+            return
+        cls.backup_json('SUMMARY_PATH')
+        cls.backup_json('DETAIL_PATH')
+        cls.save_json('SUMMARY_PATH', cls.queries, False)
+        cls.save_json('DETAIL_PATH', cls.queries, True)
+        cls.queries = None
 
     @classmethod
     def wrap_setup_test_environment(cls, func):
         def wrapped(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
-            if not RequestQueryCountConfig.enabled():
-                return result
-            cls.queries = TestResultQueryContainer()
+            cls.set_up_test_environment()
             return result
 
         return wrapped
@@ -136,11 +157,7 @@ class RequestQueryCountManager(object):
     def wrap_teardown_test_environment(cls, func):
         def wrapped(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
-            if not RequestQueryCountConfig.enabled():
-                return result
-            cls.save_json('SUMMARY_PATH', cls.queries, False)
-            cls.save_json('DETAIL_PATH', cls.queries, True)
-            cls.queries = None
+            cls.tear_down_test_environment()
             return result
 
         return wrapped
