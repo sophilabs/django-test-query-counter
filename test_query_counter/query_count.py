@@ -111,10 +111,6 @@ class TestCaseQueryContainer(object):
 
     def add(self, request, queries):
         """Agregates the queries to the captured queries dict"""
-        if request in self.recorded_requests:
-            return
-
-        self.recorded_requests.add(request)
         key = (request.method, request.path)
         self.add_by_key(key, queries)
 
