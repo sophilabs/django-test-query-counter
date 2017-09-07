@@ -1,16 +1,16 @@
 import os
-from io import StringIO
 from os import path
-from unittest import TestCase, TestLoader, TextTestRunner, mock, skip
+from unittest import TestCase, TestSuite, mock
 from unittest.mock import MagicMock
 
 import django
 from django.core.exceptions import MiddlewareNotUsed
 from django.test import Client, TransactionTestCase, override_settings
-from django.test.runner import DiscoverRunner
 from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.manager import RequestQueryCountManager
 from test_query_counter.middleware import Middleware
+
+from tests.runner import MiniTestRunner
 
 
 class TestMiddleWare(TestCase):
@@ -19,18 +19,9 @@ class TestMiddleWare(TestCase):
         django.setup()
 
     def setUp(self):
-        # Simple class that doesn't output to the standard output
-        class StringIOTextRunner(TextTestRunner):
-            def __init__(self, *args, **kwargs):
-                kwargs['stream'] = StringIO()
-                super().__init__(*args, **kwargs)
-
-        self.test_runner = DiscoverRunner()
-        self.test_runner.test_runner = StringIOTextRunner
-        RequestQueryCountManager.set_up_test_environment()
+        self.test_runner = MiniTestRunner()
 
     def tearDown(self):
-        RequestQueryCountManager.tear_down_test_environment()
         try:
             os.remove(RequestQueryCountConfig.get_setting('DETAIL_PATH'))
         except FileNotFoundError:
@@ -51,8 +42,9 @@ class TestMiddleWare(TestCase):
             def test_foo(self):
                 Client().get('/url-1')
 
-        self.test_runner.run_suite(TestLoader().loadTestsFromTestCase(
-            testCaseClass=Test))
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
         self.assertEqual(RequestQueryCountManager.queries.total, 1)
 
     def test_case_injected_two_tests(self):
@@ -63,9 +55,10 @@ class TestMiddleWare(TestCase):
             def test_bar(self):
                 self.client.get('/url-2')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        test_suite.addTest(Test('test_bar'))
+        self.test_runner.run_tests(test_labels='')
         self.assertEqual(RequestQueryCountManager.queries.total, 2)
 
     @override_settings(TEST_QUERY_COUNTER={'ENABLE': False})
@@ -77,11 +70,11 @@ class TestMiddleWare(TestCase):
             def test_bar(self):
                 self.client.get('/url-2')
 
-        self.test_runner.run_tests(
-            None,
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
-        self.assertEqual(RequestQueryCountManager.queries.total, 0)
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        test_suite.addTest(Test('test_bar'))
+        self.test_runner.run_tests(test_labels='')
+        self.assertIsNone(RequestQueryCountManager.queries)
 
     @override_settings(TEST_QUERY_COUNTER={'ENABLE': False})
     def test_disabled(self):
@@ -89,7 +82,6 @@ class TestMiddleWare(TestCase):
         with self.assertRaises(MiddlewareNotUsed):
             Middleware(mock_get_response)
 
-    @skip('Won\'t test file creation')
     def test_json_exists(self):
         class Test(TransactionTestCase):
             def test_foo(self):
@@ -98,12 +90,11 @@ class TestMiddleWare(TestCase):
         self.assertFalse(path.exists(
             RequestQueryCountConfig.get_setting('DETAIL_PATH'))
         )
-        RequestQueryCountManager.set_up_test_environment()
-        self.test_runner.run_tests(
-            None,
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
-        RequestQueryCountManager.tear_down_test_environment()
+
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
+
         self.assertTrue(
             path.exists(
                 RequestQueryCountConfig.get_setting('DETAIL_PATH')

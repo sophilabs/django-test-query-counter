@@ -126,7 +126,7 @@ class RequestQueryCountManager(object):
         def wrapped(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
             if not RequestQueryCountConfig.enabled():
-                return
+                return result
             cls.queries = TestResultQueryContainer()
             return result
 
@@ -137,13 +137,10 @@ class RequestQueryCountManager(object):
         def wrapped(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
             if not RequestQueryCountConfig.enabled():
-                return
+                return result
 
             cls.save_json('SUMMARY_PATH', cls.queries, False)
             cls.save_json('DETAIL_PATH', cls.queries, True)
-
-            cls.queries = None
-
             return result
 
         return wrapped

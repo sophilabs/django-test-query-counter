@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'test_query_counter',
 ]
 
+TEST_RUNNER = 'tests.runner.MiniTestRunner'
+
+ALLOWED_HOSTS = 'testserver'
+
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):

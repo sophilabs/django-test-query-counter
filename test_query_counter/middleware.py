@@ -92,11 +92,14 @@ class CursorProxy(object):
             stop_time = time()
             duration = (stop_time - start_time) * 1000
             if self.enable_stacktraces:
-                stacktrace = traceback.extract_stack()
+                stacktrace = traceback.format_stack()
             else:
                 stacktrace = []
 
-            _params = json.dumps([self._decode(p) for p in params])
+            try:
+                _params = json.dumps([self._decode(p) for p in params])
+            except:
+                _params = ""
 
             alias = getattr(self.db, 'alias', 'default')
             conn = self.db.connection

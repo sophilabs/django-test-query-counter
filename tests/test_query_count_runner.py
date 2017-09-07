@@ -1,31 +1,22 @@
 import os
 import unittest
-from io import StringIO
 from os import path
-from unittest import TestLoader, TextTestRunner, skip
+from unittest import TestSuite
 
 import django.test.testcases as django_testcase
-from django.test.runner import DiscoverRunner
 from test_query_counter.apps import RequestQueryCountConfig
 from test_query_counter.manager import RequestQueryCountManager
 from test_query_counter.query_count import (TestResultQueryContainer,
                                             exclude_query_count)
 
+from tests.runner import MiniTestRunner
+
 
 class TestRunnerTest(unittest.TestCase):
     def setUp(self):
-        # Simple class that doesn't output to the standard output
-        class StringIOTextRunner(TextTestRunner):
-            def __init__(self, *args, **kwargs):
-                kwargs['stream'] = StringIO()
-                super().__init__(*args, **kwargs)
-
-        self.test_runner = DiscoverRunner()
-        self.test_runner.test_runner = StringIOTextRunner
-        RequestQueryCountManager.set_up_test_environment()
+        self.test_runner = MiniTestRunner()
 
     def tearDown(self):
-        RequestQueryCountManager.tear_down_test_environment()
         try:
             os.remove(RequestQueryCountConfig.get_setting('DETAIL_PATH'))
         except FileNotFoundError:
@@ -35,7 +26,6 @@ class TestRunnerTest(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    @skip('Won\'t test file creation')
     def test_empty_test(self):
         class Test(django_testcase.TestCase):
             def test_foo(self):
@@ -43,9 +33,11 @@ class TestRunnerTest(unittest.TestCase):
 
             def test_bar(self):
                 pass
-        self.test_runner.run_suite(TestLoader().loadTestsFromTestCase(
-            testCaseClass=Test)
-        )
+
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        test_suite.addTest(Test('test_bar'))
+        self.test_runner.run_tests(test_labels='')
 
         # check for empty tests
         self.assertIsNotNone(RequestQueryCountManager, 'queries')
@@ -73,16 +65,14 @@ class TestRunnerTest(unittest.TestCase):
                                  test_class.__qualname__,
                                  method_name)
 
-    @skip('Won\'t test file creation')
     def test_runner_include_queries(self):
         class Test(django_testcase.TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
-        self.test_runner.run_tests(
-            None,
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
 
         # Assert it ran one test
         self.assertEqual(len(RequestQueryCountManager.queries.queries_by_testcase), 1)
@@ -104,9 +94,11 @@ class TestRunnerTest(unittest.TestCase):
             def test_bar(self):
                 self.client.get('/url-1')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        test_suite.addTest(Test('test_bar'))
+        self.test_runner.run_tests(test_labels='')
+
         # Assert test_foo has excluded queries
         self.assertEqual(
             RequestQueryCountManager.queries.queries_by_testcase[
@@ -129,9 +121,11 @@ class TestRunnerTest(unittest.TestCase):
             def test_bar(self):
                 self.client.get('path-1')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        test_suite.addTest(Test('test_bar'))
+        self.test_runner.run_tests(test_labels='')
+
         # Assert test_foo has excluded queries
         self.assertEqual(
             RequestQueryCountManager.queries.queries_by_testcase[
@@ -165,9 +159,12 @@ class TestRunnerTest(unittest.TestCase):
                 self.client.put('/url-3')
                 self.client.put('/url-3')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_exclude_path'))
+        test_suite.addTest(Test('test_exclude_method'))
+        test_suite.addTest(Test('test_exclude_count'))
+        self.test_runner.run_tests(test_labels='')
+
         self.assertEqual(
             RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_exclude_path')].total,
@@ -194,9 +191,10 @@ class TestRunnerTest(unittest.TestCase):
                 self.client.post('/url-2')
                 self.client.put('/url-3')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
+
         self.assertEqual(
             RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
@@ -212,9 +210,10 @@ class TestRunnerTest(unittest.TestCase):
                 self.client.post('/url-2')
                 self.client.put('/url-3')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
+
         self.assertEqual(
             RequestQueryCountManager.queries.queries_by_testcase[
                 self.get_id(Test, 'test_foo')].total,
@@ -232,9 +231,10 @@ class TestRunnerTest(unittest.TestCase):
             def test_foo(self):
                 self.client.get('/url-1')
 
-        self.test_runner.run_suite(
-            TestLoader().loadTestsFromTestCase(testCaseClass=Test)
-        )
+        test_suite = self.test_runner.suite = TestSuite()
+        test_suite.addTest(Test('test_foo'))
+        self.test_runner.run_tests(test_labels='')
+
         self.assertIn(
             self.get_id(Test, 'test_foo'),
             RequestQueryCountManager.queries.queries_by_testcase
