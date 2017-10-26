@@ -254,7 +254,7 @@ Does the code actually work?
 License
 -------
 
-PySchool is MIT Licensed. Copyright (c) 2017 Sophilabs, Inc.
+Django Test Query Counter is MIT Licensed. Copyright (c) 2017 Sophilabs, Inc.
 
 
 Credits
