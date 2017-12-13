@@ -63,7 +63,7 @@ Add it to your `INSTALLED_APPS`:
 
     INSTALLED_APPS = (
         ...
-        'test_query_count',
+        'test_query_counter',
         ...
     )
 
